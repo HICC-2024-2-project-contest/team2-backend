@@ -1,7 +1,7 @@
 ---
 name: 📝Task
 about: Task issue template
-title: 'Task : '
+title: '📝Task : '
 labels: ''
 assignees: ''
 
