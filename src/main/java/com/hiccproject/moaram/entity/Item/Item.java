@@ -1,54 +1,61 @@
-package com.hiccproject.moaram.entity;
+package com.hiccproject.moaram.entity.Item;
 
+import com.hiccproject.moaram.entity.User;
 import com.hiccproject.moaram.entity.university.University;
+import com.hiccproject.moaram.util.ItemStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
 @Entity
-@Table(name = "exhibitions", indexes = {
+@Table(name = "items", indexes = {
         @Index(name = "idx_university_id", columnList = "university_id"),
-        @Index(name = "idx_major", columnList = "major"),
-        @Index(name = "idx_field", columnList = "field"),
-        @Index(name = "idx_start_date", columnList = "start_date"),
-        @Index(name = "idx_end_date", columnList = "end_date"),
-        @Index(name = "idx_is_allowed", columnList = "is_allowed")
+        @Index(name = "idx_artwork_type_id", columnList = "artwork_type_id"),
+        @Index(name = "idx_material_id", columnList = "material_id"),
+        @Index(name = "idx_tool_id", columnList = "tool_id"),
+        @Index(name = "idx_item_name", columnList = "name"),
+        @Index(name = "idx_item_status", columnList = "status")
 })
-public class Exhibition {
+public class Item {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "university_id", nullable = false)
+    @JoinColumn(name = "university_id")
     private University university;
 
-    @Column(length = 50)
-    private String location;
-
     @Column(nullable = false, length = 50)
-    private String major;
-
-    @Column(length = 50)
-    private String field;
+    private String location;
 
     @Column(nullable = false, length = 50)
     private String name;
 
+    private Integer price;
+
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "start_date", nullable = false)
-    private LocalDate startDate;
+    @ManyToOne
+    @JoinColumn(name = "artwork_type_id")
+    private ArtworkType artworkType;
 
-    @Column(name = "end_date", nullable = false)
-    private LocalDate endDate;
+    @ManyToOne
+    @JoinColumn(name = "material_id")
+    private Material material;
+
+    @ManyToOne
+    @JoinColumn(name = "tool_id")
+    private Tool tool;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
+    private ItemStatus status;
 
     @ManyToOne
     @JoinColumn(name = "created_by", nullable = false)
@@ -62,8 +69,5 @@ public class Exhibition {
 
     @Column(name = "deleted_time")
     private LocalDateTime deletedTime;
-
-    @Column(name = "is_allowed")
-    private Boolean isAllowed = false;
 }
 
