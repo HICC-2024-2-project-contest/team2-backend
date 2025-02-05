@@ -1,0 +1,26 @@
+spring:
+  profiles:
+    active: dev  # 기본적으로 "dev" 설정 사용
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev  # 개발 환경 설정
+  datasource:
+    url: jdbc:mysql://localhost:3306/moaram
+    username: root
+    password: password
+  jpa:
+    show-sql: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod  # 운영 환경 설정
+  datasource:
+    url: ${RDS_URL}
+    username: ${RDS_USERNAME}
+    password: ${RDS_PASSWORD}
+
