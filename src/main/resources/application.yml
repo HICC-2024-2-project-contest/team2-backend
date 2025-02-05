@@ -13,6 +13,7 @@ spring:
     password: password
   jpa:
     show-sql: true
+    open-in-view: false
 
 ---
 spring:
@@ -23,4 +24,13 @@ spring:
     url: ${RDS_URL}
     username: ${RDS_USERNAME}
     password: ${RDS_PASSWORD}
+  jpa:
+    open-in-view: false
 
+---
+app:
+  allowed-urls:
+    - "/"
+    - "/public/**"
+    - "/swagger-ui/**"
+    - "/v3/api-docs/**"
