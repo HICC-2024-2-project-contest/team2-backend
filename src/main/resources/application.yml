@@ -36,6 +36,13 @@ aws:
     bucket-name: ${BUCKET_NAME}
 
 ---
+spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB   # 개별 파일 최대 크기
+      max-request-size: 50MB  # 전체 요청의 최대 크기
+
+---
 app:
   authenticated-urls:
     - "/name"

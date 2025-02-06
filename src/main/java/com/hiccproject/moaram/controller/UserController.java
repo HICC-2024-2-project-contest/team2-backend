@@ -31,13 +31,13 @@ public class UserController {
 
     @ExceptionHandler(AlreadyExistsException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
-    public String handleUserAlreadyExists(AlreadyExistsException e) {
+    public String handleAlreadyExists(AlreadyExistsException e) {
         return e.getMessage();
     }
 
     @ExceptionHandler(ResponseStatusException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public String handleUserNotFound(ResponseStatusException e) {
+    public String handleNotFound(ResponseStatusException e) {
         return e.getMessage();
     }
 
