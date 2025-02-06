@@ -60,7 +60,7 @@ public class ExhibitionController {
         }
     }
 
-    @GetMapping("/{exhibitionId}")
+    @GetMapping("/public/{exhibitionId}")
     public ResponseEntity<ExhibitionResponseDto> getExhibitionWithImage(@PathVariable Long exhibitionId) {
         try {
             // 전시 정보 조회
@@ -80,7 +80,7 @@ public class ExhibitionController {
     }
 
     // 전시 목록을 검색하는 라우터
-    @GetMapping("/search")
+    @GetMapping("/public/search")
     public ResponseEntity<Map<String, Object>> searchExhibitions(
             @RequestParam(required = false) LocalDate startDate,
             @RequestParam(required = false) LocalDate endDate,
