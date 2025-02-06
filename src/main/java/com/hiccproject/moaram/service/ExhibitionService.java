@@ -1,5 +1,7 @@
 package com.hiccproject.moaram.service;
 
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.hiccproject.moaram.dto.CreateExhibitionDto;
 import com.hiccproject.moaram.dto.KakaoUserInfoDto;
 import com.hiccproject.moaram.entity.Exhibition;
@@ -8,36 +10,44 @@ import com.hiccproject.moaram.entity.university.University;
 import com.hiccproject.moaram.repository.ExhibitionRepository;
 import com.hiccproject.moaram.repository.UniversityRepository;
 import com.hiccproject.moaram.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestAttribute;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 @Service
-@RequiredArgsConstructor
 public class ExhibitionService {
 
     private final ExhibitionRepository exhibitionRepository;
     private final UniversityRepository universityRepository;
     private final UserRepository userRepository;
+    private final AmazonS3 amazonS3;  // S3 클라이언트
 
-    private static final String IMAGE_DIR = "uploads/exhibitions/";
+    @Value("${aws.s3.bucket-name}")
+    private String BUCKET_NAME; // S3 버킷 이름
 
-    // 전시 등록
+    @Autowired
+    public ExhibitionService(ExhibitionRepository exhibitionRepository,
+                             UniversityRepository universityRepository,
+                             UserRepository userRepository,
+                             AmazonS3 amazonS3) {
+        this.exhibitionRepository = exhibitionRepository;
+        this.universityRepository = universityRepository;
+        this.userRepository = userRepository;
+        this.amazonS3 = amazonS3;
+    }
+
+    @Transactional
     public Exhibition createExhibition(CreateExhibitionDto dto, MultipartFile image, KakaoUserInfoDto userInfo) throws IOException {
-        // University 조회
         University university = universityRepository.findById(dto.getUniversityId())
                 .orElseThrow(() -> new IllegalArgumentException("University not found"));
 
-        User createdBy = userRepository.findById(userInfo.getId())  // userInfo에서 직접 유저 ID 사용
+        User createdBy = userRepository.findById(userInfo.getId())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        // Exhibition 엔티티 설정
         Exhibition exhibition = new Exhibition();
         exhibition.setUniversity(university);
         exhibition.setLocation(dto.getLocation());
@@ -49,23 +59,33 @@ public class ExhibitionService {
         exhibition.setEndDate(dto.getEndDate());
         exhibition.setCreatedBy(createdBy);
 
-        // 전시 저장
         Exhibition savedExhibition = exhibitionRepository.save(exhibition);
 
-        // 이미지 저장
         if (image != null && !image.isEmpty()) {
-            saveImage(savedExhibition.getId(), image);
+            try {
+                saveImageToS3(savedExhibition.getId(), image);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to save image to S3", e);
+            }
         }
 
         return savedExhibition;
     }
 
-    // 이미지 저장 로직
-    private void saveImage(Long exhibitionId, MultipartFile image) throws IOException {
-        String folderPath = IMAGE_DIR;
-        Files.createDirectories(Paths.get(folderPath));  // 디렉토리 생성
+    private void saveImageToS3(Long exhibitionId, MultipartFile image) throws IOException {
+        String uniqueFileName = exhibitionId + getExtension(image);
+        String filePath = "exhibitions/" + uniqueFileName;
 
-        String filePath = folderPath + exhibitionId + ".jpg";  // 파일 경로 설정
-        image.transferTo(new File(filePath));  // 이미지 저장
+        amazonS3.putObject(new PutObjectRequest(BUCKET_NAME, filePath, image.getInputStream(), null));
+    }
+
+    private String getExtension(MultipartFile image) {
+        String contentType = image.getContentType();
+        if (contentType != null && contentType.contains("image")) {
+            String[] parts = contentType.split("/");
+            return "." + parts[1];  // image/jpeg -> .jpeg
+        }
+        return ".jpg";  // 기본 .jpg 확장자
     }
 }
+
