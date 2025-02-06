@@ -1,6 +1,7 @@
 package com.hiccproject.moaram.controller;
 
 import com.hiccproject.moaram.dto.CreateExhibitionDto;
+import com.hiccproject.moaram.dto.KakaoUserInfoDto;
 import com.hiccproject.moaram.entity.Exhibition;
 import com.hiccproject.moaram.service.ExhibitionService;
 import jakarta.validation.Valid;
@@ -21,9 +22,10 @@ public class ExhibitionController {
     @PostMapping("/create")
     public ResponseEntity<Exhibition> createExhibition(
             @Valid @ModelAttribute CreateExhibitionDto dto,
-            @RequestParam("image") MultipartFile image) {
+            @RequestParam("image") MultipartFile image,
+            @RequestAttribute KakaoUserInfoDto kakaoUserInfoDto) {
         try {
-            Exhibition exhibition = exhibitionService.createExhibition(dto, image);
+            Exhibition exhibition = exhibitionService.createExhibition(dto, image, kakaoUserInfoDto);
             return ResponseEntity.ok(exhibition);
         } catch (IOException e) {
             return ResponseEntity.internalServerError().body(null);

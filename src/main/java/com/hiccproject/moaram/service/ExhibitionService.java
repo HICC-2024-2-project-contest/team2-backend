@@ -1,6 +1,7 @@
 package com.hiccproject.moaram.service;
 
 import com.hiccproject.moaram.dto.CreateExhibitionDto;
+import com.hiccproject.moaram.dto.KakaoUserInfoDto;
 import com.hiccproject.moaram.entity.Exhibition;
 import com.hiccproject.moaram.entity.User;
 import com.hiccproject.moaram.entity.university.University;
@@ -9,6 +10,7 @@ import com.hiccproject.moaram.repository.UniversityRepository;
 import com.hiccproject.moaram.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -27,7 +29,7 @@ public class ExhibitionService {
     private static final String IMAGE_DIR = "uploads/exhibitions/";
 
     // 전시 등록
-    public Exhibition createExhibition(CreateExhibitionDto dto, MultipartFile image, @RequestAttribute KakaoUserInfoDto userInfo) throws IOException {
+    public Exhibition createExhibition(CreateExhibitionDto dto, MultipartFile image, KakaoUserInfoDto userInfo) throws IOException {
         // University 조회
         University university = universityRepository.findById(dto.getUniversityId())
                 .orElseThrow(() -> new IllegalArgumentException("University not found"));
