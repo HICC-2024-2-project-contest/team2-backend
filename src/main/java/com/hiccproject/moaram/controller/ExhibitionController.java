@@ -1,6 +1,7 @@
 package com.hiccproject.moaram.controller;
 
 import com.hiccproject.moaram.dto.CreateExhibitionDto;
+import com.hiccproject.moaram.dto.ExhibitionDto;
 import com.hiccproject.moaram.dto.KakaoUserInfoDto;
 import com.hiccproject.moaram.entity.Exhibition;
 import com.hiccproject.moaram.service.ExhibitionService;
@@ -23,7 +24,7 @@ public class ExhibitionController {
     private final ExhibitionService exhibitionService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Exhibition> createExhibition(
+    public ResponseEntity<ExhibitionDto> createExhibition(
             @Valid @RequestParam("universityId") Long universityId,
             @RequestParam("location") String location,
             @Valid @RequestParam("major") String major,
@@ -47,9 +48,9 @@ public class ExhibitionController {
             dto.setEndDate(LocalDate.parse(endDate));
 
             Exhibition exhibition = exhibitionService.createExhibition(dto, image, kakaoUserInfoDto);
-            return ResponseEntity.status(HttpStatus.CREATED).body(exhibition);  // 201 상태 코드로 응답
+            return ResponseEntity.status(HttpStatus.CREATED).body(ExhibitionDto.fromEntity(exhibition));  // DTO 변환
         } catch (IOException e) {
-            return ResponseEntity.internalServerError().body(null);
+            return ResponseEntity.internalServerError().build();
         }
     }
 }
