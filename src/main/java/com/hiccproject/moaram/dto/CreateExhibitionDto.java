@@ -19,7 +19,7 @@ public class CreateExhibitionDto {
     @NotBlank
     private String major;
 
-    private String field;
+    private Long fieldId;
 
     @NotBlank
     private String name;

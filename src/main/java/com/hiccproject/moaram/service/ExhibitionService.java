@@ -7,10 +7,12 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.util.IOUtils;
 import com.hiccproject.moaram.dto.*;
-import com.hiccproject.moaram.entity.Exhibition;
 import com.hiccproject.moaram.entity.User;
+import com.hiccproject.moaram.entity.exhibition.Exhibition;
+import com.hiccproject.moaram.entity.exhibition.Field;
 import com.hiccproject.moaram.entity.university.University;
 import com.hiccproject.moaram.repository.ExhibitionRepository;
+import com.hiccproject.moaram.repository.FieldRepository;
 import com.hiccproject.moaram.repository.UniversityRepository;
 import com.hiccproject.moaram.repository.UserRepository;
 import com.hiccproject.moaram.repository.specification.ExhibitionSpecifications;
@@ -39,6 +41,9 @@ public class ExhibitionService {
 
     private final ExhibitionRepository exhibitionRepository;
     private final UniversityRepository universityRepository;
+
+    private final FieldRepository fieldRepository;
+
     private final UserRepository userRepository;
     private final AmazonS3 amazonS3;  // S3 클라이언트
 
@@ -47,11 +52,12 @@ public class ExhibitionService {
 
     @Autowired
     public ExhibitionService(ExhibitionRepository exhibitionRepository,
-                             UniversityRepository universityRepository,
+                             UniversityRepository universityRepository, FieldRepository fieldRepository,
                              UserRepository userRepository,
                              AmazonS3 amazonS3) {
         this.exhibitionRepository = exhibitionRepository;
         this.universityRepository = universityRepository;
+        this.fieldRepository = fieldRepository;
         this.userRepository = userRepository;
         this.amazonS3 = amazonS3;
     }
@@ -64,11 +70,14 @@ public class ExhibitionService {
         User createdBy = userRepository.findById(userInfo.getId())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
+        Field field = fieldRepository.findById(dto.getFieldId())
+                .orElseThrow(() -> new IllegalArgumentException("Field not found"));
+
         Exhibition exhibition = new Exhibition();
         exhibition.setUniversity(university);
         exhibition.setLocation(dto.getLocation());
         exhibition.setMajor(dto.getMajor());
-        exhibition.setField(dto.getField());
+        exhibition.setField(field);
         exhibition.setName(dto.getName());
         exhibition.setDescription(dto.getDescription());
         exhibition.setStartDate(dto.getStartDate());
@@ -95,7 +104,7 @@ public class ExhibitionService {
     }
 
     public Map<String, Object> searchExhibitionsWithPagination(
-            LocalDate startDate, LocalDate endDate, String keyword, String field, Pageable pageable) throws IOException {
+            LocalDate startDate, LocalDate endDate, String keyword, Long fieldId, Pageable pageable) throws IOException {
 
         Specification<Exhibition> spec = Specification.where(ExhibitionSpecifications.hasIsAllowedTrue())
                 .and(ExhibitionSpecifications.hasDeletedTimeNull());
@@ -109,8 +118,8 @@ public class ExhibitionService {
         if (keyword != null) {
             spec = spec.and(ExhibitionSpecifications.hasKeyword(keyword));
         }
-        if (field != null) {
-            spec = spec.and(ExhibitionSpecifications.hasField(field));
+        if (fieldId != null) {
+            spec = spec.and(ExhibitionSpecifications.hasField(fieldId));
         }
 
         // 페이지네이션을 포함한 결과 조회

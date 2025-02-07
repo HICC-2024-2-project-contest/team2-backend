@@ -1,6 +1,6 @@
 package com.hiccproject.moaram.repository;
 
-import com.hiccproject.moaram.entity.Exhibition;
+import com.hiccproject.moaram.entity.exhibition.Exhibition;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;

@@ -1,6 +1,6 @@
 package com.hiccproject.moaram.repository.specification;
 
-import com.hiccproject.moaram.entity.Exhibition;
+import com.hiccproject.moaram.entity.exhibition.Exhibition;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.StringUtils;
 
@@ -21,9 +21,9 @@ public class ExhibitionSpecifications {
     }
 
     // 전시 분야 조건
-    public static Specification<Exhibition> hasField(String field) {
+    public static Specification<Exhibition> hasField(Long fieldId) {
         return (root, query, criteriaBuilder) ->
-                StringUtils.hasText(field) ? criteriaBuilder.like(root.get("field"), "%" + field + "%") : null;
+                fieldId != null ? criteriaBuilder.equal(root.get("fieldId"), fieldId) : null;  // 필드 ID로 비교
     }
 
     // keyword로 name과 university.name을 검색하는 조건

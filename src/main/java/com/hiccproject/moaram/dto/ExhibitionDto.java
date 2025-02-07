@@ -1,6 +1,6 @@
 package com.hiccproject.moaram.dto;
 
-import com.hiccproject.moaram.entity.Exhibition;
+import com.hiccproject.moaram.entity.exhibition.Exhibition;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -12,7 +12,7 @@ public class ExhibitionDto {
     private UniversityDto university;
     private String location;
     private String major;
-    private String field;
+    private FieldDto field;
     private String name;
     private String description;
     private String startDate;
@@ -34,7 +34,7 @@ public class ExhibitionDto {
                 ),
                 exhibition.getLocation(),
                 exhibition.getMajor(),
-                exhibition.getField(),
+                FieldDto.fromEntity(exhibition.getField()), // 수정된 부분
                 exhibition.getName(),
                 exhibition.getDescription(),
                 exhibition.getStartDate().toString(),

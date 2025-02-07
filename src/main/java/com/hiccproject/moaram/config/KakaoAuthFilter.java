@@ -30,12 +30,12 @@ public class KakaoAuthFilter extends OncePerRequestFilter {
 
         if (token != null) { // 토큰이 있을 경우에만 검증
             try {
-                KakaoUserInfoDto userInfo = kakaoAuthService.validateTokenAndGetUser(token);
+                KakaoUserInfoDto kakaoUserInfoDto = kakaoAuthService.validateTokenAndGetUser(token);
                 UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(userInfo, null, null);
+                        new UsernamePasswordAuthenticationToken(kakaoUserInfoDto, null, null);
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                request.setAttribute("userInfo", userInfo);
+                request.setAttribute("kakaoUserInfoDto", kakaoUserInfoDto);
 
             } catch (InvalidTokenException e) {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid Token");
