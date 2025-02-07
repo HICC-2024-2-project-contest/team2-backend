@@ -14,11 +14,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final KakaoAuthFilter kakaoAuthFilter;
-    private final AllowedUrlsConfig allowedUrlsConfig;
+    private final AuthenticatedUrlsConfig authenticatedUrlsConfig;
 
-    public SecurityConfig(KakaoAuthFilter kakaoAuthFilter, AllowedUrlsConfig allowedUrlsConfig) {
+    public SecurityConfig(KakaoAuthFilter kakaoAuthFilter, AuthenticatedUrlsConfig authenticatedUrlsConfig) {
         this.kakaoAuthFilter = kakaoAuthFilter;
-        this.allowedUrlsConfig = allowedUrlsConfig;
+        this.authenticatedUrlsConfig = authenticatedUrlsConfig;
     }
 
     @Bean
@@ -26,8 +26,8 @@ public class SecurityConfig {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(allowedUrlsConfig.getAllowedUrls().toArray(new String[0])).permitAll()  // 설정된 URL 사용
-                        .anyRequest().authenticated()
+                        .requestMatchers(authenticatedUrlsConfig.getAuthenticatedUrls().toArray(new String[0])).authenticated() // 특정 URL은 인증 필요
+                        .anyRequest().permitAll() // 나머지 URL은 인증 없이 접근 가능
                 )
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint((request, response, authException) -> {
@@ -37,4 +37,5 @@ public class SecurityConfig {
                 .addFilterBefore(kakaoAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
+
 }
