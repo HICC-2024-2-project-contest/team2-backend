@@ -29,6 +29,18 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- Spring Boot Starter WebFlux (WebClient 사용을 위한 의존성 추가) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Starter Security -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
         <!-- Database (MySQL) -->
         <dependency>
             <groupId>mysql</groupId>
@@ -36,6 +48,12 @@
             <version>8.0.32</version>
         </dependency>
 
+        <!-- Hibernate Validator (Bean Validation Provider) 추가 -->
+        <dependency>
+            <groupId>org.hibernate.validator</groupId>
+            <artifactId>hibernate-validator</artifactId>
+            <version>6.2.0.Final</version>
+        </dependency>
 
         <!-- Lombok (For reducing boilerplate code) -->
         <dependency>
