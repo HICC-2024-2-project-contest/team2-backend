@@ -22,7 +22,7 @@ public class UserController {
         return userService.processUser(kakaoUserInfoDto);
     }
 
-    @GetMapping("/public/{id}")
+    @GetMapping("/{id}")
     public UserDto getUser(@PathVariable Long id) {
         // 유저를 찾고, DTO로 변환하여 반환
         User user = userService.getUserById(id);

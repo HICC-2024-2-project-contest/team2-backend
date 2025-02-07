@@ -45,4 +45,4 @@ spring:
 ---
 app:
   authenticated-urls:
-    - "/name"
+    - "/api/users"
