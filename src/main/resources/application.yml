@@ -46,3 +46,4 @@ spring:
 app:
   authenticated-urls:
     - "/api/users"
+    - "/api/exhibitions"
