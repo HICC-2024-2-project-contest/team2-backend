@@ -28,6 +28,22 @@ spring:
     open-in-view: false
 
 ---
+aws:
+  access-key: ${AWS_ACCESS_KEY}
+  secret-key: ${AWS_SECRET_KEY}
+  region: ${AWS_REGION}
+  s3:
+    bucket-name: ${BUCKET_NAME}
+
+---
+spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB   # 개별 파일 최대 크기
+      max-request-size: 50MB  # 전체 요청의 최대 크기
+
+---
 app:
   authenticated-urls:
-    - "/name"
+    - "/api/users"
+    - "/api/exhibitions"

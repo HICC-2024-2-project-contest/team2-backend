@@ -1,6 +1,6 @@
 package com.hiccproject.moaram.entity.relation;
 
-import com.hiccproject.moaram.entity.Exhibition;
+import com.hiccproject.moaram.entity.exhibition.Exhibition;
 import com.hiccproject.moaram.entity.Item.Item;
 import com.hiccproject.moaram.entity.composite.ItemExhibitionId;
 import jakarta.persistence.*;
