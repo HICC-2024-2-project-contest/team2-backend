@@ -29,8 +29,5 @@ spring:
 
 ---
 app:
-  allowed-urls:
-    - "/"
-    - "/public/**"
-    - "/swagger-ui/**"
-    - "/v3/api-docs/**"
+  authenticated-urls:
+    - "/name"

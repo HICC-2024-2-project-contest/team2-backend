@@ -28,19 +28,13 @@ public class KakaoAuthFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         String token = extractToken(request);
 
-        if (token != null) {
+        if (token != null) { // 토큰이 있을 경우에만 검증
             try {
-                // Token을 검증하고 사용자 정보를 가져옵니다.
                 KakaoUserInfoDto userInfo = kakaoAuthService.validateTokenAndGetUser(token);
-
-                // 사용자 정보를 기반으로 인증 객체 생성
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(userInfo, null, null);
 
-                // SecurityContextHolder에 인증 정보를 설정하여 인증된 상태로 처리하도록 합니다.
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-
-                // 요청의 "userInfo" 속성에 사용자 정보 저장
                 request.setAttribute("userInfo", userInfo);
 
             } catch (InvalidTokenException e) {
@@ -49,8 +43,10 @@ public class KakaoAuthFilter extends OncePerRequestFilter {
             }
         }
 
+        // 토큰이 없으면 아무 작업도 하지 않고 다음 필터 진행
         filterChain.doFilter(request, response);
     }
+
 
     private String extractToken(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
