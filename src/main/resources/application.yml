@@ -14,6 +14,9 @@ spring:
   jpa:
     show-sql: true
     open-in-view: false
+aws:
+  s3:
+    save-path: "exhibitions/develop/"
 
 ---
 spring:
@@ -26,6 +29,9 @@ spring:
     password: ${RDS_PASSWORD}
   jpa:
     open-in-view: false
+aws:
+  s3:
+    save-path: "exhibitions/"
 
 ---
 aws:
