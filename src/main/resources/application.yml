@@ -1,0 +1,55 @@
+spring:
+  profiles:
+    active: dev  # 기본적으로 "dev" 설정 사용
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev  # 개발 환경 설정
+  datasource:
+    url: jdbc:mysql://localhost:3306/moaram
+    username: root
+    password: password
+  jpa:
+    show-sql: true
+    open-in-view: false
+aws:
+  s3:
+    save-path: "exhibitions/develop/"
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod  # 운영 환경 설정
+  datasource:
+    url: ${RDS_URL}
+    username: ${RDS_USERNAME}
+    password: ${RDS_PASSWORD}
+  jpa:
+    open-in-view: false
+aws:
+  s3:
+    save-path: "exhibitions/"
+
+---
+aws:
+  access-key: ${AWS_ACCESS_KEY}
+  secret-key: ${AWS_SECRET_KEY}
+  region: ${AWS_REGION}
+  s3:
+    bucket-name: ${BUCKET_NAME}
+
+---
+spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB   # 개별 파일 최대 크기
+      max-request-size: 50MB  # 전체 요청의 최대 크기
+
+---
+app:
+  authenticated-urls:
+    - "/api/users"
+    - "/api/exhibitions"
