@@ -50,6 +50,9 @@ public class ExhibitionService {
     @Value("${aws.s3.bucket-name}")
     private String BUCKET_NAME; // S3 버킷 이름
 
+    @Value("${aws.s3.save-path}")
+    private String savePath;
+
     @Autowired
     public ExhibitionService(ExhibitionRepository exhibitionRepository,
                              UniversityRepository universityRepository, FieldRepository fieldRepository,
@@ -160,7 +163,7 @@ public class ExhibitionService {
 
     private void saveImageToS3(Long exhibitionId, MultipartFile image) throws IOException {
         String uniqueFileName = exhibitionId + ".jpeg";
-        String filePath = "exhibitions/" + uniqueFileName;
+        String filePath = savePath + uniqueFileName;
 
         // 파일 크기 설정
         ObjectMetadata metadata = new ObjectMetadata();
@@ -175,7 +178,7 @@ public class ExhibitionService {
 
     // 이미지 파일을 S3에서 가져오는 메서드
     public String getImageFromS3(Long exhibitionId) throws IOException {
-        String filePath = "exhibitions/" + exhibitionId + ".jpeg";
+        String filePath = savePath + exhibitionId + ".jpeg";
         S3Object s3Object = amazonS3.getObject(BUCKET_NAME, filePath);
         S3ObjectInputStream inputStream = s3Object.getObjectContent();
         byte[] imageBytes = IOUtils.toByteArray(inputStream);
