@@ -7,7 +7,6 @@ import com.hiccproject.moaram.dto.KakaoUserInfoDto;
 import com.hiccproject.moaram.entity.exhibition.Exhibition;
 import com.hiccproject.moaram.exception.AlreadyExistsException;
 import com.hiccproject.moaram.service.ExhibitionService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -31,14 +30,14 @@ public class ExhibitionController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ExhibitionDto> createExhibition(
-            @Valid @RequestParam("universityId") Long universityId,
-            @RequestParam("location") String location,
-            @Valid @RequestParam("major") String major,
-            @RequestParam("fieldId") Long fieldId,  // 기존 String → Long으로 변경
-            @Valid @RequestParam("name") String name,
-            @RequestParam("description") String description,
-            @Valid @RequestParam("startDate") String startDate,
-            @Valid @RequestParam("endDate") String endDate,
+            @RequestParam("universityId") Long universityId,
+            @RequestParam(value = "location", required = false) String location,
+            @RequestParam("major") String major,
+            @RequestParam("fieldId") Long fieldId,
+            @RequestParam("name") String name,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam("startDate") String startDate,
+            @RequestParam("endDate") String endDate,
             @RequestParam("image") MultipartFile image,
             @RequestAttribute KakaoUserInfoDto kakaoUserInfoDto) {
 
@@ -65,7 +64,7 @@ public class ExhibitionController {
         try {
             Exhibition exhibition = exhibitionService.getExhibition(exhibitionId);
             ExhibitionDto exhibitionDto = ExhibitionDto.fromEntity(exhibition);
-            String base64Image = exhibitionService.getImageFromS3(exhibitionId);
+            String base64Image = exhibitionService.getImageBase64(exhibitionId);
 
             ExhibitionResponseDto response = new ExhibitionResponseDto(exhibitionDto, base64Image);
             return ResponseEntity.ok(response);
