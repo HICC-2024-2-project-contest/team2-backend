@@ -88,6 +88,15 @@ public class ExhibitionController {
         }
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteExhibition(@PathVariable Long exhibitionId) {
+        if (!exhibitionService.existsById(exhibitionId)){
+            return ResponseEntity.notFound().build();
+        }
+        exhibitionService.deleteExhibition(exhibitionId);
+        return ResponseEntity.noContent().build();
+    }
+
     @ExceptionHandler(AlreadyExistsException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public String handleAlreadyExists(AlreadyExistsException e) {
