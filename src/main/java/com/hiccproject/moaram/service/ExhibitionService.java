@@ -26,6 +26,7 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -56,6 +57,10 @@ public class ExhibitionService {
         this.fieldRepository = fieldRepository;
         this.userRepository = userRepository;
         this.s3Service = s3Service;
+    }
+
+    public boolean existsById(Long id) {
+        return exhibitionRepository.existsById(id);
     }
 
     @Transactional
@@ -156,4 +161,14 @@ public class ExhibitionService {
 
         return response;
     }
+
+    public void deleteExhibition(Long id) {
+        Optional<Exhibition> exhibition = exhibitionRepository.findById(id);
+        if (exhibition.isPresent()) {
+            exhibitionRepository.deleteById(id);
+        } else {
+            throw new IllegalArgumentException("Exhibition not found with id: " + id);
+        }
+    }
+
 }
