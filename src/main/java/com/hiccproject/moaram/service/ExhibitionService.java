@@ -23,6 +23,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,10 +58,6 @@ public class ExhibitionService {
         this.fieldRepository = fieldRepository;
         this.userRepository = userRepository;
         this.s3Service = s3Service;
-    }
-
-    public boolean existsById(Long id) {
-        return exhibitionRepository.existsById(id);
     }
 
     @Transactional
@@ -163,12 +160,13 @@ public class ExhibitionService {
     }
 
     public void deleteExhibition(Long id) {
-        Optional<Exhibition> exhibition = exhibitionRepository.findById(id);
-        if (exhibition.isPresent()) {
-            exhibitionRepository.deleteById(id);
-        } else {
-            throw new IllegalArgumentException("Exhibition not found with id: " + id);
-        }
+        Exhibition exhibition = getExhibition(id);
+        exhibition.setDeletedTime(LocalDateTime.now());  // 삭제 시간 업데이트
+        exhibitionRepository.save(exhibition);           // 변경된 정보 저장
+    }
+
+    public boolean existsById(Long id) {
+        return exhibitionRepository.existsById(id);
     }
 
 }
