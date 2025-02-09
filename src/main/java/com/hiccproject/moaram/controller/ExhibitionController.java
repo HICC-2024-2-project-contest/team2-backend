@@ -89,11 +89,8 @@ public class ExhibitionController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteExhibition(@PathVariable Long exhibitionId) {
-        if (!exhibitionService.existsById(exhibitionId)){
-            return ResponseEntity.notFound().build();
-        }
-        exhibitionService.deleteExhibition(exhibitionId);
+    public ResponseEntity<Void> deleteExhibition(@PathVariable Long id) {
+        exhibitionService.deleteExhibition(id);
         return ResponseEntity.noContent().build();
     }
 
