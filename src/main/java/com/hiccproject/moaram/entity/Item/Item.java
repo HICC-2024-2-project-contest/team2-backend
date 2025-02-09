@@ -54,7 +54,7 @@ public class Item {
     private Tool tool;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 10)
+    @Column(length = 10)
     private ItemStatus status;
 
     @ManyToOne

@@ -16,7 +16,10 @@ spring:
     open-in-view: false
 aws:
   s3:
-    save-path: "exhibitions/develop/"
+    item:
+      save-path: "items/develop/"
+    exhibition:
+      save-path: "exhibitions/develop/"
 
 ---
 spring:
@@ -31,7 +34,10 @@ spring:
     open-in-view: false
 aws:
   s3:
-    save-path: "exhibitions/"
+    item:
+      save-path: "items/"
+    exhibition:
+      save-path: "exhibitions/develop/"
 
 ---
 aws:
@@ -53,3 +59,4 @@ app:
   authenticated-urls:
     - "/api/users"
     - "/api/exhibitions"
+    - "/api/items"
