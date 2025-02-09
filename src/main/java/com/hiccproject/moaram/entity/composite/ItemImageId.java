@@ -11,7 +11,8 @@ import java.io.Serializable;
 @EqualsAndHashCode
 @Getter
 @Setter
-public class ExhibitionScrapId implements Serializable {
-    private Long userId;
-    private Long exhibitionId;
+public class ItemImageId implements Serializable {
+    private Long item_id;  // item_id로 변경
+    private Integer idx;
 }
+

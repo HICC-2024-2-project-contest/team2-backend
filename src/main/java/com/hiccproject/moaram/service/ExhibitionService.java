@@ -1,11 +1,5 @@
 package com.hiccproject.moaram.service;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectInputStream;
-import com.amazonaws.util.IOUtils;
 import com.hiccproject.moaram.dto.*;
 import com.hiccproject.moaram.entity.User;
 import com.hiccproject.moaram.entity.exhibition.Exhibition;
@@ -28,9 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.time.LocalDate;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,24 +37,25 @@ public class ExhibitionService {
     private final FieldRepository fieldRepository;
 
     private final UserRepository userRepository;
-    private final AmazonS3 amazonS3;  // S3 클라이언트
+
+    private final S3Service s3Service;
 
     @Value("${aws.s3.bucket-name}")
     private String BUCKET_NAME; // S3 버킷 이름
 
-    @Value("${aws.s3.save-path}")
+    @Value("${aws.s3.exhibition.save-path}")
     private String savePath;
 
     @Autowired
     public ExhibitionService(ExhibitionRepository exhibitionRepository,
                              UniversityRepository universityRepository, FieldRepository fieldRepository,
                              UserRepository userRepository,
-                             AmazonS3 amazonS3) {
+                             S3Service s3Service) {
         this.exhibitionRepository = exhibitionRepository;
         this.universityRepository = universityRepository;
         this.fieldRepository = fieldRepository;
         this.userRepository = userRepository;
-        this.amazonS3 = amazonS3;
+        this.s3Service = s3Service;
     }
 
     @Transactional
@@ -91,7 +84,7 @@ public class ExhibitionService {
 
         if (image != null && !image.isEmpty()) {
             try {
-                saveImageToS3(savedExhibition.getId(), image);
+                s3Service.uploadImage(savedExhibition.getId(), savePath, BUCKET_NAME, image);
             } catch (IOException e) {
                 throw new RuntimeException("Failed to save image to S3", e);
             }
@@ -104,6 +97,10 @@ public class ExhibitionService {
     public Exhibition getExhibition(Long exhibitionId) {
         return exhibitionRepository.findByIdAndIsAllowedAndDeletedTimeIsNull(exhibitionId, true)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exhibition not found with id: " + exhibitionId));
+    }
+
+    public String getImageBase64(Long exhibitionId) throws IOException {
+        return s3Service.getImageBase64(exhibitionId, savePath, BUCKET_NAME);
     }
 
     public Map<String, Object> searchExhibitionsWithPagination(
@@ -132,7 +129,7 @@ public class ExhibitionService {
         List<ExhibitionResponseDto> exhibitions = exhibitionPage.stream()
                 .map(exhibition -> {
                     try {
-                        String base64Image = getImageFromS3(exhibition.getId());
+                        String base64Image = s3Service.getImageBase64(exhibition.getId(), savePath, BUCKET_NAME);
                         return new ExhibitionResponseDto(
                                 ExhibitionDto.fromEntity(exhibition),
                                 base64Image
@@ -159,32 +156,4 @@ public class ExhibitionService {
 
         return response;
     }
-
-
-    private void saveImageToS3(Long exhibitionId, MultipartFile image) throws IOException {
-        String uniqueFileName = exhibitionId + ".jpeg";
-        String filePath = savePath + uniqueFileName;
-
-        // 파일 크기 설정
-        ObjectMetadata metadata = new ObjectMetadata();
-        metadata.setContentLength(image.getSize());  // 파일 크기 설정
-        metadata.setContentType(image.getContentType());  // MIME 타입 설정
-
-        // S3에 업로드
-        try (InputStream inputStream = image.getInputStream()) {
-            amazonS3.putObject(new PutObjectRequest(BUCKET_NAME, filePath, inputStream, metadata));
-        }
-    }
-
-    // 이미지 파일을 S3에서 가져오는 메서드
-    public String getImageFromS3(Long exhibitionId) throws IOException {
-        String filePath = savePath + exhibitionId + ".jpeg";
-        S3Object s3Object = amazonS3.getObject(BUCKET_NAME, filePath);
-        S3ObjectInputStream inputStream = s3Object.getObjectContent();
-        byte[] imageBytes = IOUtils.toByteArray(inputStream);
-
-        // Base64로 변환
-        return Base64.getEncoder().encodeToString(imageBytes);
-    }
 }
-
