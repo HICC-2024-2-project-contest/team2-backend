@@ -43,7 +43,7 @@ aws:
     item:
       save-path: "items/"
     exhibition:
-      save-path: "exhibitions/develop/"
+      save-path: "exhibitions/"
 
 cors:
   allowed-origins: "http://localhost:5173"  # 로컬호스트의 모든 포트 허용
