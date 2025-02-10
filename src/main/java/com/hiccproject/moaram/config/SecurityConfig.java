@@ -8,9 +8,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
@@ -18,12 +15,10 @@ public class SecurityConfig {
 
     private final KakaoAuthFilter kakaoAuthFilter;
     private final AuthenticatedUrlsConfig authenticatedUrlsConfig;
-    private final CorsProperties corsProperties; // CORS 설정 불러오기
 
     public SecurityConfig(KakaoAuthFilter kakaoAuthFilter, AuthenticatedUrlsConfig authenticatedUrlsConfig, CorsProperties corsProperties) {
         this.kakaoAuthFilter = kakaoAuthFilter;
         this.authenticatedUrlsConfig = authenticatedUrlsConfig;
-        this.corsProperties = corsProperties;
     }
 
     @Bean
