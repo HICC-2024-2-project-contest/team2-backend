@@ -46,7 +46,7 @@ aws:
       save-path: "exhibitions/develop/"
 
 cors:
-  allowed-origins: "http://localhost:*"  # 로컬호스트의 모든 포트 허용
+  allowed-origins: "http://localhost:5173"  # 로컬호스트의 모든 포트 허용
   allowed-methods: "GET,POST,PUT,DELETE,OPTIONS"
   allowed-headers: "*"
   allow-credentials: true
