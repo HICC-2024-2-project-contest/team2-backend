@@ -9,7 +9,6 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
@@ -18,7 +17,7 @@ public class SecurityConfig {
 
     private final KakaoAuthFilter kakaoAuthFilter;
     private final AuthenticatedUrlsConfig authenticatedUrlsConfig;
-    private final CorsProperties corsProperties; // CORS 설정 불러오기
+    private final CorsProperties corsProperties;
 
     public SecurityConfig(KakaoAuthFilter kakaoAuthFilter, AuthenticatedUrlsConfig authenticatedUrlsConfig, CorsProperties corsProperties) {
         this.kakaoAuthFilter = kakaoAuthFilter;
@@ -29,7 +28,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))  // CORS 설정 적용
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(authenticatedUrlsConfig.getAuthenticatedUrls().toArray(new String[0])).authenticated()
@@ -44,16 +43,20 @@ public class SecurityConfig {
                 .build();
     }
 
+    // CORS 설정
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(corsProperties.getAllowedOrigins());
-        configuration.setAllowedMethods(corsProperties.getAllowedMethods());
-        configuration.setAllowedHeaders(corsProperties.getAllowedHeaders());
-        configuration.setAllowCredentials(corsProperties.isAllowCredentials());
-
+    public UrlBasedCorsConfigurationSource corsConfigurationSource() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        CorsConfiguration config = new CorsConfiguration();
+
+        // CORS 속성들 설정
+        config.setAllowedOriginPatterns(corsProperties.getAllowedOrigins());  // 허용된 출처
+        config.setAllowedMethods(corsProperties.getAllowedMethods());  // 허용된 HTTP 메서드
+        config.setAllowedHeaders(corsProperties.getAllowedHeaders());  // 허용된 헤더
+        config.setAllowCredentials(corsProperties.isAllowCredentials());  // 자격 증명 허용
+
+        // 모든 경로에 대해 CORS 설정 적용
+        source.registerCorsConfiguration("/**", config);
         return source;
     }
 }
