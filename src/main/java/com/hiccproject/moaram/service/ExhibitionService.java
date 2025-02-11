@@ -58,6 +58,20 @@ public class ExhibitionService {
         this.s3Service = s3Service;
     }
 
+    public Object getScrapStatus(Long exhibitionId, String token) {
+        boolean isScrapped = exhibitionRepository.existsByExhibitionId(exhibitionId);
+
+        // 토큰이 없을 경우
+        if (token == null || token.isBlank()) {
+            return isScrapped ? "scrap" : false;
+        }
+
+        // 토큰이 호출될 경우
+        return exhibitionRepository.findByExhibitionId(exhibitionId)
+                .<Object>map(exhibition -> exhibition)
+                .orElse(true);
+    }
+
     @Transactional
     public Exhibition createExhibition(CreateExhibitionDto dto, MultipartFile image, KakaoUserInfoDto userInfo) throws IOException {
         University university = universityRepository.findById(dto.getUniversityId())
