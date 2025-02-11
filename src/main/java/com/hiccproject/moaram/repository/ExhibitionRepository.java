@@ -15,4 +15,8 @@ public interface ExhibitionRepository extends JpaRepository<Exhibition, Long>, J
     Optional<Exhibition> findByIdAndIsAllowedAndDeletedTimeIsNull(Long exhibitionId, Boolean isAllowed);
 
     List<Exhibition> findAll(Specification<Exhibition> spec);
+
+    boolean existsByExhibitionId(Long exhibitionId);
+
+    Optional<Exhibition> findByExhibitionId(Long exhibitionId);
 }
