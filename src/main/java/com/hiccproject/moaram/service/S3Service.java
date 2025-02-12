@@ -59,7 +59,7 @@ public class S3Service {
 
 
     // S3에서 이미지 가져오기
-    public String getImageBase64(Long exhibitionId,
+    public String getImageBase64(String exhibitionId,
                                  String savePath,
                                  String bucketName) throws IOException {
         String filePath = savePath + exhibitionId + ".jpeg";

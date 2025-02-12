@@ -10,6 +10,7 @@ import com.hiccproject.moaram.service.ItemService;
 import com.hiccproject.moaram.service.relation.ItemExhibitionService;
 import com.hiccproject.moaram.util.ItemStatus;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/items")
@@ -62,6 +64,26 @@ public class ItemController {
             return ResponseEntity.status(HttpStatus.CREATED).body(ItemDto.fromEntity(item, exhibition));
         } catch (IOException e) {
             return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<Map<String, Object>> searchItems(
+            @RequestParam(required = false) String keyword,  // 이름 검색
+            @RequestParam(required = false) Integer artworkTypeId,  // 작품 종류 ID
+            @RequestParam(required = false) Integer materialId,  // 재료 ID
+            @RequestParam(required = false) Integer toolId,  // 도구 종류 ID
+            @RequestParam(required = false) ItemStatus status,  // 상태
+            @RequestParam(required = false) Integer minPrice,  // 최소 금액
+            @RequestParam(required = false) Integer maxPrice,
+            @RequestAttribute(required = false) KakaoUserInfoDto kakaoUserInfoDto,  // 최대 금액
+            Pageable pageable) {  // 페이징 정보
+        try {
+            Map<String, Object> response = itemService.searchItemsWithPagination(
+                    keyword, artworkTypeId, materialId, toolId, status, minPrice, maxPrice, kakaoUserInfoDto, pageable);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
