@@ -2,6 +2,7 @@ package com.hiccproject.moaram.controller;
 
 import com.hiccproject.moaram.dto.CreateItemDto;
 import com.hiccproject.moaram.dto.ItemDto;
+import com.hiccproject.moaram.dto.ItemResponseDto;
 import com.hiccproject.moaram.dto.KakaoUserInfoDto;
 import com.hiccproject.moaram.entity.Item.Item;
 import com.hiccproject.moaram.entity.exhibition.Exhibition;
@@ -64,6 +65,22 @@ public class ItemController {
             return ResponseEntity.status(HttpStatus.CREATED).body(ItemDto.fromEntity(item, exhibition));
         } catch (IOException e) {
             return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    // 아이템 정보를 ID로 조회하는 엔드포인트
+    @GetMapping("/{itemId}")
+    public ResponseEntity<ItemResponseDto> getItem(
+            @PathVariable Long itemId,
+            @RequestAttribute(required = false) KakaoUserInfoDto kakaoUserInfoDto) {
+        try {
+            // 서비스에서 아이템 정보를 반환
+            ItemResponseDto response = itemService.getItem(itemId, kakaoUserInfoDto);
+            // 성공 응답 반환
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            // 오류 발생 시 500 Internal Server Error 상태 반환
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 

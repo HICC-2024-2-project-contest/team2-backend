@@ -6,6 +6,8 @@ import com.hiccproject.moaram.util.ItemStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @AllArgsConstructor
 public class ItemDto {
@@ -16,6 +18,7 @@ public class ItemDto {
     private Integer price;
     private String description;
     private ItemStatus status;
+    private LocalDateTime createdTime;
     private ExhibitionDto exhibitionDto;  // ExhibitionDto 추가
 
     public static ItemDto fromEntity(Item item, Exhibition exhibition) {
@@ -48,6 +51,7 @@ public class ItemDto {
                 item.getPrice(),
                 item.getDescription(),
                 item.getStatus(),
+                item.getCreatedTime(),
                 exhibitionDto  // exhibition이 null이면 null로 설정
         );
     }

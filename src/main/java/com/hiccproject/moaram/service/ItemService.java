@@ -4,6 +4,8 @@ import com.hiccproject.moaram.dto.*;
 import com.hiccproject.moaram.entity.Item.*;
 import com.hiccproject.moaram.entity.User;
 import com.hiccproject.moaram.entity.composite.ItemImageId;
+import com.hiccproject.moaram.entity.exhibition.Exhibition;
+import com.hiccproject.moaram.entity.relation.ItemExhibition;
 import com.hiccproject.moaram.entity.relation.ItemWishlist;
 import com.hiccproject.moaram.entity.university.University;
 import com.hiccproject.moaram.repository.*;
@@ -14,9 +16,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,6 +37,7 @@ public class ItemService {
     private final ItemRepository itemRepository;
     private final ItemImageRepository itemImageRepository;
     private final ItemWishlistRepository itemWishlistRepository;
+    private final ItemExhibitionRepository itemExhibitionRepository;
     private final UniversityRepository universityRepository;
     private final UserRepository userRepository;
     private final ArtworkTypeRepository artworkTypeRepository;
@@ -116,6 +121,48 @@ public class ItemService {
         return savedItem;
     }
 
+    public ItemResponseDto getItem(Long itemId, KakaoUserInfoDto kakaoUserInfoDto) {
+        // 아이템과 위시리스트 상태를 함께 조회 (kakaoUserInfoDto가 null일 경우에도 아이템은 조회되어야 함)
+        Object[] result = itemWishlistRepository
+                .findItemWithWishlistStatus(itemId, (kakaoUserInfoDto != null) ? kakaoUserInfoDto.getId() : null)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found with id: " + itemId));
+
+        Item item = (Item) ((Object[]) result[0])[0];  // 첫 번째 요소는 Item 객체
+        ItemWishlist itemWishlist = (ItemWishlist) ((Object[]) result[0])[1];  // 두 번째 요소는 ItemWishlist 객체 (없으면 null)
+
+        // 아이템과 관련된 전시회 조회 (ItemExhibition을 통해 연관된 전시회를 찾음)
+        ItemExhibition itemExhibition = itemExhibitionRepository
+                .findByItemIdAndItemDeletedTimeIsNullAndExhibitionIsAllowedAndExhibitionDeletedTimeIsNull(itemId, true)
+                .orElse(null);  // 전시회가 없으면 null 반환
+
+        Exhibition exhibition = null;
+        if (itemExhibition != null) {
+            exhibition = itemExhibition.getExhibition();
+        }
+
+        // 아이템 DTO 생성
+        ItemDto itemDto = ItemDto.fromEntity(item, exhibition);
+
+        // 아이템 이미지 목록 조회 (인덱스 순서대로)
+        List<ItemImage> itemImages = itemImageRepository.findByItemIdOrderByIdAsc(itemId);
+
+        // 이미지들을 Base64로 변환하여 리스트에 추가
+        List<String> imageNames = new ArrayList<>();
+        for (ItemImage itemImage : itemImages) {
+            imageNames.add(itemImage.getId().getItem_id() + "_" + itemImage.getId().getIdx()); // ID를 리스트에 추가
+        }
+
+        // 여러 이미지를 한 번에 Base64로 변환
+        List<String> base64Images = s3Service.getImagesBase64(imageNames, savePath, BUCKET_NAME);
+
+        // 위시리스트 상태 처리 (kakaoUserInfoDto가 null일 경우 false로 설정)
+        boolean isInWishlist = (kakaoUserInfoDto != null && itemWishlist != null);
+
+        // 응답 DTO 생성
+        return new ItemResponseDto(itemDto, base64Images, isInWishlist);
+    }
+
+
     public Map<String, Object> searchItemsWithPagination(
             String keyword, Integer artworkTypeId, Integer materialId, Integer toolId,
             ItemStatus status, Integer minPrice, Integer maxPrice, KakaoUserInfoDto kakaoUserInfoDto,
@@ -149,7 +196,7 @@ public class ItemService {
         // Item 조회
         Page<Item> itemPage = itemRepository.findAll(spec, pageable);
 
-        List<ItemResponseDto> items = new ArrayList<>();
+        List<ListItemResponseDto> items = new ArrayList<>();
 
         // 카카오 유저 정보가 있을 경우, ItemWishlist 정보를 한 번에 조회
         if (kakaoUserInfoDto != null) {
@@ -177,7 +224,7 @@ public class ItemService {
                             String base64Image = s3Service.getImageBase64(item.getId() + "_0", savePath, BUCKET_NAME);
 
                             // ItemResponseDto 생성
-                            return new ItemResponseDto(listItemDto, base64Image, isInWishlist);
+                            return new ListItemResponseDto(listItemDto, base64Image, isInWishlist);
                         } catch (Exception e) {
                             return null;
                         }
@@ -195,7 +242,7 @@ public class ItemService {
                             String base64Image = s3Service.getImageBase64(item.getId() + "_0", savePath, BUCKET_NAME);
 
                             // ItemResponseDto 생성
-                            return new ItemResponseDto(listItemDto, base64Image, false);
+                            return new ListItemResponseDto(listItemDto, base64Image, false);
                         } catch (Exception e) {
                             return null;
                         }
