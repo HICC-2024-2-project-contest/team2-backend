@@ -25,10 +25,10 @@ public class ItemService {
     private final ItemRepository itemRepository;
     private final ItemImageRepository itemImageRepository;
     private final UniversityRepository universityRepository;
-    private final UserRepository userRepository;
     private final ArtworkTypeRepository artworkTypeRepository;
     private final MaterialRepository materialRepository;
     private final ToolRepository toolRepository;
+    private final UserService userService;
     private final S3Service s3Service;
 
     @Value("${aws.s3.bucket-name}")
@@ -37,15 +37,14 @@ public class ItemService {
     @Value("${aws.s3.item.save-path}")
     private String savePath;
 
-    public Item createItem(CreateItemDto dto, List<MultipartFile> images, KakaoUserInfoDto userInfo) throws IOException {
+    public Item createItem(CreateItemDto dto, List<MultipartFile> images, KakaoUserInfoDto kakaouserInfo) throws IOException {
         University university = null;
         if (dto.getUniversityId() != null) {
             university = universityRepository.findById(dto.getUniversityId())
                     .orElseThrow(() -> new IllegalArgumentException("University not found"));
         }
 
-        User createdBy = userRepository.findById(userInfo.getId())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        User createdBy = userService.getUserById(kakaouserInfo.getId());
 
         ArtworkType artworkType = null;
         if (dto.getArtworkTypeId() != null) {
