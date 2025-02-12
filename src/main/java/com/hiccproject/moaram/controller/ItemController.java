@@ -68,6 +68,15 @@ public class ItemController {
         }
     }
 
+    @PostMapping("/wishlist/{itemId}")
+    public ResponseEntity<Void> addToWishlist(
+            @PathVariable Long itemId,
+            @RequestAttribute KakaoUserInfoDto kakaoUserInfoDto) {
+
+        itemService.addToWishlist(kakaoUserInfoDto, itemId);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
     // 아이템 정보를 ID로 조회하는 엔드포인트
     @GetMapping("/{itemId}")
     public ResponseEntity<ItemResponseDto> getItem(
