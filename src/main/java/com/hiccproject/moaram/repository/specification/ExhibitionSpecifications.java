@@ -23,7 +23,7 @@ public class ExhibitionSpecifications {
     // 전시 분야 조건
     public static Specification<Exhibition> hasField(Long fieldId) {
         return (root, query, criteriaBuilder) ->
-                fieldId != null ? criteriaBuilder.equal(root.get("fieldId"), fieldId) : null;  // 필드 ID로 비교
+                criteriaBuilder.equal(root.get("field").get("id"), fieldId);  // "fieldId" → "field.id"
     }
 
     // keyword로 name과 university.name을 검색하는 조건
