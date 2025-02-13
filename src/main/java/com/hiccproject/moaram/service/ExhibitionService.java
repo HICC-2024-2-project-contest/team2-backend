@@ -22,9 +22,11 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -172,5 +174,11 @@ public class ExhibitionService {
         ));
 
         return response;
+    }
+
+    public void deleteExhibition(Long id) {
+        Exhibition exhibition = getExhibition(id);
+        exhibition.setDeletedTime(LocalDateTime.now());  // 삭제 시간 업데이트
+        exhibitionRepository.save(exhibition);           // 변경된 정보 저장
     }
 }
