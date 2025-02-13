@@ -88,7 +88,7 @@ public class ExhibitionController {
             @RequestParam(required = false) LocalDate endDate,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long fieldId,  // String → Long 변경
-            @RequestAttribute KakaoUserInfoDto kakaoUserInfoDto,
+            @RequestAttribute(required = false) KakaoUserInfoDto kakaoUserInfoDto,
             Pageable pageable) {
         try {
             Map<String, Object> response = exhibitionService.searchExhibitionsWithPagination(startDate, endDate, keyword, fieldId, kakaoUserInfoDto, pageable);
