@@ -164,9 +164,4 @@ public class ExhibitionService {
         exhibition.setDeletedTime(LocalDateTime.now());  // 삭제 시간 업데이트
         exhibitionRepository.save(exhibition);           // 변경된 정보 저장
     }
-
-    public boolean existsById(Long id) {
-        return exhibitionRepository.existsById(id);
-    }
-
 }
