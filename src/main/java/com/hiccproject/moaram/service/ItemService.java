@@ -4,6 +4,7 @@ import com.hiccproject.moaram.dto.*;
 import com.hiccproject.moaram.entity.Item.*;
 import com.hiccproject.moaram.entity.User;
 import com.hiccproject.moaram.entity.composite.ItemImageId;
+import com.hiccproject.moaram.entity.composite.ItemWishlistId;
 import com.hiccproject.moaram.entity.exhibition.Exhibition;
 import com.hiccproject.moaram.entity.relation.ItemExhibition;
 import com.hiccproject.moaram.entity.relation.ItemWishlist;
@@ -39,6 +40,7 @@ public class ItemService {
     private final ItemWishlistRepository itemWishlistRepository;
     private final ItemExhibitionRepository itemExhibitionRepository;
     private final UniversityRepository universityRepository;
+    private final UserRepository userRepository;
     private final ArtworkTypeRepository artworkTypeRepository;
     private final MaterialRepository materialRepository;
     private final ToolRepository toolRepository;
@@ -51,14 +53,14 @@ public class ItemService {
     @Value("${aws.s3.item.save-path}")
     private String savePath;
 
-    public Item createItem(CreateItemDto dto, List<MultipartFile> images, KakaoUserInfoDto kakaouserInfo) throws IOException {
+    public Item createItem(CreateItemDto dto, List<MultipartFile> images, KakaoUserInfoDto kakaoUserInfoDto) throws IOException {
         University university = null;
         if (dto.getUniversityId() != null) {
             university = universityRepository.findById(dto.getUniversityId())
                     .orElseThrow(() -> new IllegalArgumentException("University not found"));
         }
 
-        User createdBy = userService.getUserById(kakaouserInfo.getId());
+        User createdBy = userService.getUserById(kakaoUserInfoDto.getId());
 
         ArtworkType artworkType = null;
         if (dto.getArtworkTypeId() != null) {
@@ -118,6 +120,28 @@ public class ItemService {
         }
 
         return savedItem;
+    }
+
+    @Transactional
+    public void addToWishlist(KakaoUserInfoDto kakaoUserInfoDto, Long itemId) {
+        User user = userService.getUserById(kakaoUserInfoDto.getId());
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new IllegalArgumentException("Item not found"));
+
+        ItemWishlistId wishlistId = new ItemWishlistId();
+        wishlistId.setUserId(user.getId());
+        wishlistId.setItemId(itemId);
+
+        if (itemWishlistRepository.existsById(wishlistId)) {
+            throw new IllegalStateException("Item already in wishlist");
+        }
+
+        ItemWishlist itemWishlist = new ItemWishlist();
+        itemWishlist.setId(wishlistId);
+        itemWishlist.setUser(user);
+        itemWishlist.setItem(item);
+
+        itemWishlistRepository.save(itemWishlist);
     }
 
     public ItemResponseDto getItem(Long itemId, KakaoUserInfoDto kakaoUserInfoDto) {
@@ -195,7 +219,7 @@ public class ItemService {
         // Item 조회
         Page<Item> itemPage = itemRepository.findAll(spec, pageable);
 
-        List<ListItemResponseDto> items = new ArrayList<>();
+        List<ListItemResponseDto> items;
 
         // 카카오 유저 정보가 있을 경우, ItemWishlist 정보를 한 번에 조회
         if (kakaoUserInfoDto != null) {

@@ -72,3 +72,5 @@ app:
     - "/api/users"
     - "/api/exhibitions"
     - "/api/items"
+    - "/api/exhibitions/scrap/**"
+    - "/api/items/wishlist/**"
