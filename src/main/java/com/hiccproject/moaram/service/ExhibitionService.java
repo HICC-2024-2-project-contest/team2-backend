@@ -2,13 +2,12 @@ package com.hiccproject.moaram.service;
 
 import com.hiccproject.moaram.dto.*;
 import com.hiccproject.moaram.entity.User;
+import com.hiccproject.moaram.entity.composite.ExhibitionScrapId;
 import com.hiccproject.moaram.entity.exhibition.Exhibition;
 import com.hiccproject.moaram.entity.exhibition.Field;
+import com.hiccproject.moaram.entity.relation.ExhibitionScrap;
 import com.hiccproject.moaram.entity.university.University;
-import com.hiccproject.moaram.repository.ExhibitionRepository;
-import com.hiccproject.moaram.repository.FieldRepository;
-import com.hiccproject.moaram.repository.UniversityRepository;
-import com.hiccproject.moaram.repository.UserRepository;
+import com.hiccproject.moaram.repository.*;
 import com.hiccproject.moaram.repository.specification.ExhibitionSpecifications;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,12 +31,10 @@ import java.util.stream.Collectors;
 public class ExhibitionService {
 
     private final ExhibitionRepository exhibitionRepository;
+    private final ExhibitionScrapRepository exhibitionScrapRepository;
     private final UniversityRepository universityRepository;
-
     private final FieldRepository fieldRepository;
-
-    private final UserRepository userRepository;
-
+    private final UserService userService;
     private final S3Service s3Service;
 
     @Value("${aws.s3.bucket-name}")
@@ -47,24 +44,24 @@ public class ExhibitionService {
     private String savePath;
 
     @Autowired
-    public ExhibitionService(ExhibitionRepository exhibitionRepository,
+    public ExhibitionService(ExhibitionRepository exhibitionRepository, ExhibitionScrapRepository exhibitionScrapRepository,
                              UniversityRepository universityRepository, FieldRepository fieldRepository,
-                             UserRepository userRepository,
+                             UserRepository userRepository, UserService userService,
                              S3Service s3Service) {
         this.exhibitionRepository = exhibitionRepository;
+        this.exhibitionScrapRepository = exhibitionScrapRepository;
         this.universityRepository = universityRepository;
         this.fieldRepository = fieldRepository;
-        this.userRepository = userRepository;
+        this.userService = userService;
         this.s3Service = s3Service;
     }
 
     @Transactional
-    public Exhibition createExhibition(CreateExhibitionDto dto, MultipartFile image, KakaoUserInfoDto userInfo) throws IOException {
+    public Exhibition createExhibition(CreateExhibitionDto dto, MultipartFile image, KakaoUserInfoDto kakaouserInfo) throws IOException {
         University university = universityRepository.findById(dto.getUniversityId())
                 .orElseThrow(() -> new IllegalArgumentException("University not found"));
 
-        User createdBy = userRepository.findById(userInfo.getId())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        User createdBy = userService.getUserById(kakaouserInfo.getId());
 
         Field field = fieldRepository.findById(dto.getFieldId())
                 .orElseThrow(() -> new IllegalArgumentException("Field not found"));
@@ -91,6 +88,26 @@ public class ExhibitionService {
         }
 
         return savedExhibition;
+    }
+
+    @Transactional
+    public void scrapExhibition(KakaoUserInfoDto kakaoUserInfoDto, Long exhibitionId) {
+        User user = userService.getUserById(kakaoUserInfoDto.getId());
+        Exhibition exhibition = getExhibition(exhibitionId);
+
+        ExhibitionScrapId scrapId = new ExhibitionScrapId();
+        scrapId.setUserId(kakaoUserInfoDto.getId());
+        scrapId.setExhibitionId(exhibitionId);
+
+        if (exhibitionScrapRepository.existsById(scrapId)) {
+            throw new IllegalStateException("Exhibition already scrapped");
+        }
+
+        ExhibitionScrap exhibitionScrap = new ExhibitionScrap();
+        exhibitionScrap.setId(scrapId);
+        exhibitionScrap.setUser(user);
+        exhibitionScrap.setExhibition(exhibition);
+        exhibitionScrapRepository.save(exhibitionScrap);
     }
 
     // 전시 정보를 가져오는 메서드

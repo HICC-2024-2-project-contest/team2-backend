@@ -59,6 +59,15 @@ public class ExhibitionController {
         }
     }
 
+    @PostMapping("/scrap/{exhibitionId}")
+    public ResponseEntity<Void> scrapExhibition(
+            @PathVariable Long exhibitionId,
+            @RequestAttribute KakaoUserInfoDto kakaoUserInfoDto) {
+
+        exhibitionService.scrapExhibition(kakaoUserInfoDto, exhibitionId);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
     @GetMapping("/{exhibitionId}")
     public ResponseEntity<ExhibitionResponseDto> getExhibitionWithImage(@PathVariable Long exhibitionId) {
         try {
