@@ -88,9 +88,10 @@ public class ExhibitionController {
             @RequestParam(required = false) LocalDate endDate,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long fieldId,  // String → Long 변경
+            @RequestAttribute KakaoUserInfoDto kakaoUserInfoDto,
             Pageable pageable) {
         try {
-            Map<String, Object> response = exhibitionService.searchExhibitionsWithPagination(startDate, endDate, keyword, fieldId, pageable);
+            Map<String, Object> response = exhibitionService.searchExhibitionsWithPagination(startDate, endDate, keyword, fieldId, kakaoUserInfoDto, pageable);
             return ResponseEntity.ok(response);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

@@ -117,11 +117,13 @@ public class ExhibitionService {
     }
 
     public String getImageBase64(Long exhibitionId) throws IOException {
-        return s3Service.getImageBase64(exhibitionId, savePath, BUCKET_NAME);
+        return s3Service.getImageBase64(exhibitionId.toString(), savePath, BUCKET_NAME);
     }
 
     public Map<String, Object> searchExhibitionsWithPagination(
-            LocalDate startDate, LocalDate endDate, String keyword, Long fieldId, Pageable pageable) throws IOException {
+            LocalDate startDate, LocalDate endDate, String keyword, Long fieldId, KakaoUserInfoDto kakaoUserInfoDto, Pageable pageable) throws IOException {
+
+        kakaoUserInfoDto.getId();
 
         Specification<Exhibition> spec = Specification.where(ExhibitionSpecifications.hasIsAllowedTrue())
                 .and(ExhibitionSpecifications.hasDeletedTimeNull());
@@ -146,7 +148,7 @@ public class ExhibitionService {
         List<ExhibitionResponseDto> exhibitions = exhibitionPage.stream()
                 .map(exhibition -> {
                     try {
-                        String base64Image = s3Service.getImageBase64(exhibition.getId(), savePath, BUCKET_NAME);
+                        String base64Image = s3Service.getImageBase64(exhibition.getId().toString(), savePath, BUCKET_NAME);
                         return new ExhibitionResponseDto(
                                 ExhibitionDto.fromEntity(exhibition),
                                 base64Image
