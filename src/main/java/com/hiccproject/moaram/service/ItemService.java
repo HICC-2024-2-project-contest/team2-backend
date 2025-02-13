@@ -1,21 +1,34 @@
 package com.hiccproject.moaram.service;
 
-import com.hiccproject.moaram.dto.CreateItemDto;
-import com.hiccproject.moaram.dto.KakaoUserInfoDto;
+import com.hiccproject.moaram.dto.*;
 import com.hiccproject.moaram.entity.Item.*;
 import com.hiccproject.moaram.entity.User;
 import com.hiccproject.moaram.entity.composite.ItemImageId;
+import com.hiccproject.moaram.entity.composite.ItemWishlistId;
+import com.hiccproject.moaram.entity.exhibition.Exhibition;
+import com.hiccproject.moaram.entity.relation.ItemExhibition;
+import com.hiccproject.moaram.entity.relation.ItemWishlist;
 import com.hiccproject.moaram.entity.university.University;
 import com.hiccproject.moaram.repository.*;
+import com.hiccproject.moaram.repository.specification.ItemSpecifications;
+import com.hiccproject.moaram.util.ItemStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -24,11 +37,14 @@ public class ItemService {
 
     private final ItemRepository itemRepository;
     private final ItemImageRepository itemImageRepository;
+    private final ItemWishlistRepository itemWishlistRepository;
+    private final ItemExhibitionRepository itemExhibitionRepository;
     private final UniversityRepository universityRepository;
     private final UserRepository userRepository;
     private final ArtworkTypeRepository artworkTypeRepository;
     private final MaterialRepository materialRepository;
     private final ToolRepository toolRepository;
+    private final UserService userService;
     private final S3Service s3Service;
 
     @Value("${aws.s3.bucket-name}")
@@ -37,15 +53,14 @@ public class ItemService {
     @Value("${aws.s3.item.save-path}")
     private String savePath;
 
-    public Item createItem(CreateItemDto dto, List<MultipartFile> images, KakaoUserInfoDto userInfo) throws IOException {
+    public Item createItem(CreateItemDto dto, List<MultipartFile> images, KakaoUserInfoDto kakaoUserInfoDto) throws IOException {
         University university = null;
         if (dto.getUniversityId() != null) {
             university = universityRepository.findById(dto.getUniversityId())
                     .orElseThrow(() -> new IllegalArgumentException("University not found"));
         }
 
-        User createdBy = userRepository.findById(userInfo.getId())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        User createdBy = userService.getUserById(kakaoUserInfoDto.getId());
 
         ArtworkType artworkType = null;
         if (dto.getArtworkTypeId() != null) {
@@ -107,4 +122,171 @@ public class ItemService {
         return savedItem;
     }
 
+    @Transactional
+    public void addToWishlist(KakaoUserInfoDto kakaoUserInfoDto, Long itemId) {
+        User user = userService.getUserById(kakaoUserInfoDto.getId());
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new IllegalArgumentException("Item not found"));
+
+        ItemWishlistId wishlistId = new ItemWishlistId();
+        wishlistId.setUserId(user.getId());
+        wishlistId.setItemId(itemId);
+
+        if (itemWishlistRepository.existsById(wishlistId)) {
+            throw new IllegalStateException("Item already in wishlist");
+        }
+
+        ItemWishlist itemWishlist = new ItemWishlist();
+        itemWishlist.setId(wishlistId);
+        itemWishlist.setUser(user);
+        itemWishlist.setItem(item);
+
+        itemWishlistRepository.save(itemWishlist);
+    }
+
+    public ItemResponseDto getItem(Long itemId, KakaoUserInfoDto kakaoUserInfoDto) {
+        // 아이템과 위시리스트 상태를 함께 조회 (kakaoUserInfoDto가 null일 경우에도 아이템은 조회되어야 함)
+        Object[] result = itemWishlistRepository
+                .findItemWithWishlistStatus(itemId, (kakaoUserInfoDto != null) ? kakaoUserInfoDto.getId() : null)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found with id: " + itemId));
+
+        Item item = (Item) ((Object[]) result[0])[0];  // 첫 번째 요소는 Item 객체
+        ItemWishlist itemWishlist = (ItemWishlist) ((Object[]) result[0])[1];  // 두 번째 요소는 ItemWishlist 객체 (없으면 null)
+
+        // 아이템과 관련된 전시회 조회 (ItemExhibition을 통해 연관된 전시회를 찾음)
+        ItemExhibition itemExhibition = itemExhibitionRepository
+                .findByItemIdAndItemDeletedTimeIsNullAndExhibitionIsAllowedAndExhibitionDeletedTimeIsNull(itemId, true)
+                .orElse(null);  // 전시회가 없으면 null 반환
+
+        Exhibition exhibition = null;
+        if (itemExhibition != null) {
+            exhibition = itemExhibition.getExhibition();
+        }
+
+        // 아이템 DTO 생성
+        ItemDto itemDto = ItemDto.fromEntity(item, exhibition);
+
+        // 아이템 이미지 목록 조회 (인덱스 순서대로)
+        List<ItemImage> itemImages = itemImageRepository.findByItemIdOrderByIdAsc(itemId);
+
+        // 이미지들을 Base64로 변환하여 리스트에 추가
+        List<String> imageNames = new ArrayList<>();
+        for (ItemImage itemImage : itemImages) {
+            imageNames.add(itemImage.getId().getItem_id() + "_" + itemImage.getId().getIdx()); // ID를 리스트에 추가
+        }
+
+        // 여러 이미지를 한 번에 Base64로 변환
+        List<String> base64Images = s3Service.getImagesBase64(imageNames, savePath, BUCKET_NAME);
+
+        // 위시리스트 상태 처리 (kakaoUserInfoDto가 null일 경우 false로 설정)
+        boolean isInWishlist = (kakaoUserInfoDto != null && itemWishlist != null);
+
+        // 응답 DTO 생성
+        return new ItemResponseDto(itemDto, base64Images, isInWishlist);
+    }
+
+
+    public Map<String, Object> searchItemsWithPagination(
+            String keyword, Integer artworkTypeId, Integer materialId, Integer toolId,
+            ItemStatus status, Integer minPrice, Integer maxPrice, KakaoUserInfoDto kakaoUserInfoDto,
+            Pageable pageable) {
+
+        // Item에 대한 동적 Specification 생성
+        Specification<Item> spec = Specification.where(ItemSpecifications.hasDeletedTimeNull());
+
+        if (keyword != null) {
+            spec = spec.and(ItemSpecifications.hasKeyword(keyword));
+        }
+        if (artworkTypeId != null) {
+            spec = spec.and(ItemSpecifications.hasType(artworkTypeId));
+        }
+        if (materialId != null) {
+            spec = spec.and(ItemSpecifications.hasMaterial(materialId));
+        }
+        if (toolId != null) {
+            spec = spec.and(ItemSpecifications.hasTool(toolId));
+        }
+        if (status != null) {
+            spec = spec.and(ItemSpecifications.hasStatus(status));
+        }
+        if (minPrice != null) {
+            spec = spec.and(ItemSpecifications.hasMinPrice(minPrice));
+        }
+        if (maxPrice != null) {
+            spec = spec.and(ItemSpecifications.hasMaxPrice(maxPrice));
+        }
+
+        // Item 조회
+        Page<Item> itemPage = itemRepository.findAll(spec, pageable);
+
+        List<ListItemResponseDto> items;
+
+        // 카카오 유저 정보가 있을 경우, ItemWishlist 정보를 한 번에 조회
+        if (kakaoUserInfoDto != null) {
+            // 카카오 유저 정보가 있을 경우, ItemWishlist 목록을 한 번에 조회
+            List<ItemWishlist> itemWishlistList = itemWishlistRepository.findByUserId(kakaoUserInfoDto.getId());
+
+            // ItemWishlist를 Map으로 변환 (아이템 ID를 키로 사용)
+            Map<Long, Boolean> wishlistMap = itemWishlistList.stream()
+                    .collect(Collectors.toMap(
+                            itemWishlist -> itemWishlist.getId().getItemId(),
+                            itemWishlist -> true
+                    ));
+
+            // Item 리스트를 돌며 위시리스트 상태를 설정
+            items = itemPage.stream()
+                    .map(item -> {
+                        try {
+                            // 위시리스트에 해당 아이템이 있는지 확인
+                            boolean isInWishlist = wishlistMap.containsKey(item.getId());
+
+                            // ListItemDto 생성
+                            ListItemDto listItemDto = ListItemDto.fromEntity(item);
+
+                            // base64Image 처리 (예시 코드)
+                            String base64Image = s3Service.getImageBase64(item.getId() + "_0", savePath, BUCKET_NAME);
+
+                            // ItemResponseDto 생성
+                            return new ListItemResponseDto(listItemDto, base64Image, isInWishlist);
+                        } catch (Exception e) {
+                            return null;
+                        }
+                    })
+                    .collect(Collectors.toList());
+        } else {
+            // 카카오 유저 정보가 없을 경우, 모든 아이템에 대해 wishlist 여부는 false로 처리
+            items = itemPage.stream()
+                    .map(item -> {
+                        try {
+                            // ListItemDto 생성
+                            ListItemDto listItemDto = ListItemDto.fromEntity(item);
+
+                            // base64Image 처리 (예시 코드)
+                            String base64Image = s3Service.getImageBase64(item.getId() + "_0", savePath, BUCKET_NAME);
+
+                            // ItemResponseDto 생성
+                            return new ListItemResponseDto(listItemDto, base64Image, false);
+                        } catch (Exception e) {
+                            return null;
+                        }
+                    })
+                    .collect(Collectors.toList());
+        }
+
+        // 페이지 정보와 함께 응답
+        Map<String, Object> response = new HashMap<>();
+        response.put("items", items);
+        response.put("pageInfo", new PageMetadataDto(
+                itemPage.getNumber(),
+                itemPage.getSize(),
+                itemPage.getTotalElements(),
+                itemPage.getTotalPages(),
+                itemPage.hasNext(),
+                itemPage.hasPrevious(),
+                itemPage.isFirst(),
+                itemPage.isLast()
+        ));
+
+        return response;
+    }
 }

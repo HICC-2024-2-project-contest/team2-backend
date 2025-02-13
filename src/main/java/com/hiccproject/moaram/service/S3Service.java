@@ -14,6 +14,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Base64;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -59,7 +61,7 @@ public class S3Service {
 
 
     // S3에서 이미지 가져오기
-    public String getImageBase64(Long exhibitionId,
+    public String getImageBase64(String exhibitionId,
                                  String savePath,
                                  String bucketName) throws IOException {
         String filePath = savePath + exhibitionId + ".jpeg";
@@ -68,5 +70,27 @@ public class S3Service {
         byte[] imageBytes = IOUtils.toByteArray(inputStream);
 
         return Base64.getEncoder().encodeToString(imageBytes);
+    }
+
+    public List<String> getImagesBase64(List<String> imageNames, String savePath, String bucketName) {
+        // 각 이미지 ID에 대해 비동기적으로 이미지를 Base64로 변환
+        List<CompletableFuture<String>> futures = imageNames.stream()
+                .map(imageName -> CompletableFuture.supplyAsync(() -> {
+                    try {
+                        return getImageBase64(imageName, savePath, bucketName);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        return null; // 실패 시 null 반환
+                    }
+                }))
+                .collect(Collectors.toList());
+
+        // 모든 CompletableFuture가 완료될 때까지 대기하고 결과 반환
+        CompletableFuture<Void> allOf = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+        allOf.join();  // 비동기 처리 완료까지 대기
+
+        return futures.stream()
+                .map(CompletableFuture::join) // 각 CompletableFuture의 결과를 가져옴
+                .collect(Collectors.toList());
     }
 }
