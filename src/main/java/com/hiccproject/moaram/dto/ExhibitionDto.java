@@ -18,6 +18,7 @@ public class ExhibitionDto {
     private String startDate;
     private String endDate;
     private UserDto createdBy;
+    private int exhibitionItemCount;
 
     public static ExhibitionDto fromEntity(Exhibition exhibition) {
         return new ExhibitionDto(
@@ -44,6 +45,7 @@ public class ExhibitionDto {
                         exhibition.getCreatedBy().getName(),
                         exhibition.getCreatedBy().getEmail()
                 )
+                exhibition.getExhibitionItemCount()
         );
     }
 }
