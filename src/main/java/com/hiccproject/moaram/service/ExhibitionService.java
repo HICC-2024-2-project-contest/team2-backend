@@ -59,7 +59,7 @@ public class ExhibitionService {
     }
 
     public Object getScrapStatus(Long exhibitionId, String token) {
-        boolean isScrapped = exhibitionRepository.existsByExhibitionId(exhibitionId);
+        boolean isScrapped = exhibitionRepository.existsById(exhibitionId);
 
         // 토큰이 없을 경우
         if (token == null || token.isBlank()) {
@@ -67,7 +67,7 @@ public class ExhibitionService {
         }
 
         // 토큰이 호출될 경우
-        return exhibitionRepository.findByExhibitionId(exhibitionId)
+        return exhibitionRepository.findById(exhibitionId)
                 .<Object>map(exhibition -> exhibition)
                 .orElse(true);
     }
