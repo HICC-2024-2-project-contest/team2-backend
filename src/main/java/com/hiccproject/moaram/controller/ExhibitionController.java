@@ -89,9 +89,19 @@ public class ExhibitionController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteExhibition(@PathVariable Long id) {
-        exhibitionService.deleteExhibition(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Void> deleteExhibition(
+            @PathVariable Long id,
+            @RequestAttribute KakaoUserInfoDto kakaoUserInfoDto) {
+
+        Exhibition exhibition = exhibitionService.getExhibition(id); // 전시 정보 조회
+
+        // 요청한 사용자가 전시 생성자인지 확인
+        if (!exhibition.getCreatedBy().equals(kakaoUserInfoDto.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); // 403 Forbidden 반환
+        }
+
+        exhibitionService.deleteExhibition(id); // 전시 삭제
+        return ResponseEntity.noContent().build(); // 204 No Content
     }
 
     @ExceptionHandler(AlreadyExistsException.class)
