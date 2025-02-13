@@ -82,6 +82,13 @@ public class ExhibitionController {
         }
     }
 
+    @GetMapping("/{exhibitionId}/scrap")
+    public ResponseEntity<?> checkScrapStatus(@PathVariable Long exhibitionId,
+                                              @RequestHeader(value = "Authorization", required = false) String token) {
+        Object result = exhibitionService.getScrapStatus(exhibitionId, token);
+        return ResponseEntity.ok(result);
+    }
+
     @GetMapping("/search")
     public ResponseEntity<Map<String, Object>> searchExhibitions(
             @RequestParam(required = false) LocalDate startDate,

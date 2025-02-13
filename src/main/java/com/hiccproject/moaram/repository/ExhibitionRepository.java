@@ -12,7 +12,11 @@ import java.util.Optional;
 @Repository
 public interface ExhibitionRepository extends JpaRepository<Exhibition, Long>, JpaSpecificationExecutor<Exhibition> {
 
-    Optional<Exhibition> findByIdAndIsAllowedAndDeletedTimeIsNull(Long exhibitionId, Boolean isAllowed);
+    Optional<Exhibition> findByIdAndIsAllowedAndDeletedTimeIsNull(Long id, Boolean isAllowed);
 
     List<Exhibition> findAll(Specification<Exhibition> spec);
+
+    boolean existsById(Long id);
+
+    Optional<Exhibition> findById(Long id);
 }
