@@ -123,8 +123,6 @@ public class ExhibitionService {
     public Map<String, Object> searchExhibitionsWithPagination(
             LocalDate startDate, LocalDate endDate, String keyword, Long fieldId, KakaoUserInfoDto kakaoUserInfoDto, Pageable pageable) throws IOException {
 
-        kakaoUserInfoDto.getId();
-
         Specification<Exhibition> spec = Specification.where(ExhibitionSpecifications.hasIsAllowedTrue())
                 .and(ExhibitionSpecifications.hasDeletedTimeNull());
 
