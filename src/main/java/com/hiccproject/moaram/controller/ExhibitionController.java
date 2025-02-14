@@ -1,9 +1,6 @@
 package com.hiccproject.moaram.controller;
 
-import com.hiccproject.moaram.dto.CreateExhibitionDto;
-import com.hiccproject.moaram.dto.ExhibitionDto;
-import com.hiccproject.moaram.dto.ExhibitionResponseDto;
-import com.hiccproject.moaram.dto.KakaoUserInfoDto;
+import com.hiccproject.moaram.dto.*;
 import com.hiccproject.moaram.entity.exhibition.Exhibition;
 import com.hiccproject.moaram.exception.AlreadyExistsException;
 import com.hiccproject.moaram.service.ExhibitionService;
@@ -19,6 +16,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -96,6 +94,15 @@ public class ExhibitionController {
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    @GetMapping("/calendar")
+    public ResponseEntity<List<ExhibitionCalenderDto>> getExhibitionsByMonth(
+            @RequestParam("year") int year,
+            @RequestParam("month") int month) {
+
+        List<ExhibitionCalenderDto> exhibitions = exhibitionService.getExhibitionsByMonth(year, month);
+        return ResponseEntity.ok(exhibitions);
     }
 
     @ExceptionHandler(AlreadyExistsException.class)

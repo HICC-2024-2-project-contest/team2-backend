@@ -173,4 +173,15 @@ public class ExhibitionService {
 
         return response;
     }
+
+    public List<ExhibitionCalenderDto> getExhibitionsByMonth(int year, int month) {
+        LocalDate startDate = LocalDate.of(year, month, 1);
+        LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
+
+        List<Exhibition> exhibitions = exhibitionRepository.findByDateRangeAndIsAllowedAndDeletedTimeIsNull(startDate, endDate);
+
+        return exhibitions.stream()
+                .map(ExhibitionCalenderDto::fromEntity)
+                .collect(Collectors.toList());
+    }
 }
